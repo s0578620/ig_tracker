@@ -57,8 +57,12 @@ def inject_and_fetch(driver, username):
           after = json.data.user.edge_followed_by.page_info.end_cursor;
           window.followers = window.followers.concat(
             json.data.user.edge_followed_by.edges.map(({ node }) => ({
+              id: node.id,   
               username: node.username,
-              full_name: node.full_name
+              full_name: node.full_name,
+              is_verified: node.is_verified,
+              is_private: node.is_private,
+              profile_pic_url: node.profile_pic_url
             }))
           );
         }
@@ -84,8 +88,12 @@ def inject_and_fetch(driver, username):
           after = json.data.user.edge_follow.page_info.end_cursor;
           window.followings = window.followings.concat(
             json.data.user.edge_follow.edges.map(({ node }) => ({
+              id: node.id,
               username: node.username,
-              full_name: node.full_name
+              full_name: node.full_name,
+              is_verified: node.is_verified,
+              is_private: node.is_private,
+              profile_pic_url: node.profile_pic_url
             }))
           );
         }
