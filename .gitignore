@@ -1,0 +1,21 @@
+# .gitignore
+
+# Ignore .env files
+.env
+
+# Ignore Python cache files
+__pycache__/
+*.pyc
+
+# Ignore WebDriver executables if downloaded
+chromedriver.exe
+chromedriver
+geckodriver.exe
+geckodriver
+
+# Ignore virtual environments
+venv/
+.env/
+
+
+.idea/*
