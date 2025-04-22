@@ -1,13 +1,17 @@
 import json
 import time
 import os
+from datetime import datetime
 
-def save_to_file(data, filename):
-    """Speichert JSON-Daten in Datei."""
-    os.makedirs("data", exist_ok=True)
-    with open(os.path.join("data", filename), "w", encoding="utf-8") as f:
+def save_to_file(data, username, filename):
+    """Speichert JSON-Daten in Benutzerordner/Datumsordner mit Datum im Dateinamen."""
+    date_stamp = datetime.now().strftime("%Y%m%d")
+    user_folder = os.path.join("data", username, date_stamp)
+    os.makedirs(user_folder, exist_ok=True)
+    full_path = os.path.join(user_folder, f"{date_stamp}_{filename}.json")
+    with open(full_path, "w", encoding="utf-8") as f:
         json.dump(data, f, indent=2, ensure_ascii=False)
-    print(f"✅ Gespeichert: data/{filename}")
+    print(f"✅ Gespeichert: {full_path}")
 
 def inject_and_fetch(driver, username):
     print("🚀 Vollautomatisches JavaScript Injection gestartet...")
@@ -128,7 +132,7 @@ def inject_and_fetch(driver, username):
     print(f"✅ Ich folge nicht zurück: {len(iDontFollowBack)} Stück")
 
     # Speichern
-    save_to_file(followers, "followers.json")
-    save_to_file(followings, "followings.json")
-    save_to_file(dontFollowMeBack, "dontFollowMeBack.json")
-    save_to_file(iDontFollowBack, "iDontFollowBack.json")
+    save_to_file(followers, username, "followers")
+    save_to_file(followings, username, "followings")
+    save_to_file(dontFollowMeBack, username, "dontFollowMeBack")
+    save_to_file(iDontFollowBack, username, "iDontFollowBack")

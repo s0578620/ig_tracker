@@ -1,73 +1,65 @@
 import json
 import os
-from glob import glob
-from datetime import datetime
 
-DATA_DIR = "data"
-REPORTS_DIR = "reports"
 
-def load_data(filepath):
-    with open(filepath, 'r', encoding='utf-8') as f:
-        return json.load(f)
+def load_followers(path):
+    """Lädt eine Follower-Liste aus einer JSON-Datei."""
+    with open(path, "r", encoding="utf-8") as f:
+        data = json.load(f)
+    return set(user["username"] for user in data)
 
-def extract_usernames(user_list):
-    return set(user['username'] for user in user_list)
 
-def compare_snapshots(old_file, new_file):
-    old_data = load_data(old_file)
-    new_data = load_data(new_file)
+def compare_followers(user, date1, date2):
+    """Vergleicht zwei Follower-Datenstände."""
+    base_path = os.path.join("data", user)
+    file1 = os.path.join(base_path, date1, f"{date1}_followers.json")
+    file2 = os.path.join(base_path, date2, f"{date2}_followers.json")
 
-    old_followers = extract_usernames(old_data['followers'])
-    new_followers = extract_usernames(new_data['followers'])
-
-    old_followings = extract_usernames(old_data['followings'])
-    new_followings = extract_usernames(new_data['followings'])
-
-    return {
-        "new_followers": new_followers - old_followers,
-        "lost_followers": old_followers - new_followers,
-        "new_followings": new_followings - old_followings,
-        "unfollowed": old_followings - new_followings
-    }
-
-def save_report(content, filename):
-    if not os.path.exists(REPORTS_DIR):
-        os.makedirs(REPORTS_DIR)
-    path = os.path.join(REPORTS_DIR, filename)
-    with open(path, 'w', encoding='utf-8') as f:
-        f.write(content)
-    print(f"✅ Bericht gespeichert unter {path}")
-
-def main():
-    files = sorted(glob(os.path.join(DATA_DIR, "*.json")))
-    if len(files) < 2:
-        print("❗ Mindestens zwei Datensätze im /data/ Ordner erforderlich!")
+    if not (os.path.exists(file1) and os.path.exists(file2)):
+        print("❌ Fehler: Eine oder beide Dateien existieren nicht!")
         return
 
-    old_file = files[-2]
-    new_file = files[-1]
+    followers_old = load_followers(file1)
+    followers_new = load_followers(file2)
 
-    print(f"Vergleiche {old_file} 🆚 {new_file}...\n")
-    result = compare_snapshots(old_file, new_file)
+    unfollowed = followers_old - followers_new
+    new_followers = followers_new - followers_old
 
-    now = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-    report_content = f"""
-Instagram Vergleichsbericht - {now}
+    print(f"\n📊 Vergleich für @{user}: {date1} ➔ {date2}")
+    print(f"👋 Entfolgt: {len(unfollowed)} Nutzer")
+    print(f"🎉 Neue Follower: {len(new_followers)} Nutzer")
 
-Neue Follower:
-{', '.join(result["new_followers"]) if result["new_followers"] else 'Keine'}
+    save_report(user, date1, date2, unfollowed, new_followers)
 
-Entfolgte Follower:
-{', '.join(result["lost_followers"]) if result["lost_followers"] else 'Keine'}
 
-Neu Gefolgt:
-{', '.join(result["new_followings"]) if result["new_followings"] else 'Keine'}
+def save_report(user, date1, date2, unfollowed, new_followers):
+    """Speichert einen Vergleichsreport."""
+    os.makedirs("reports", exist_ok=True)
+    filename = f"reports/{user}_{date1}_vs_{date2}_report.txt"
 
-Entfolgte Followings:
-{', '.join(result["unfollowed"]) if result["unfollowed"] else 'Keine'}
-"""
+    with open(filename, "w", encoding="utf-8") as f:
+        f.write(f"📊 Vergleich für @{user}\n")
+        f.write(f"Von {date1} ➔ {date2}\n\n")
 
-    save_report(report_content, f"report_{now}.txt")
+        f.write("👋 Entfolgt:\n")
+        for u in sorted(unfollowed):
+            f.write(f"- {u}\n")
+        if not unfollowed:
+            f.write("- Keine Entfolger!\n")
+
+        f.write("\n🎉 Neue Follower:\n")
+        for u in sorted(new_followers):
+            f.write(f"+ {u}\n")
+        if not new_followers:
+            f.write("+ Keine neuen Follower!\n")
+
+    print(f"✅ Report gespeichert: {filename}")
+
 
 if __name__ == "__main__":
-    main()
+    # Beispiel Aufruf
+    user = input("👤 Benutzername eingeben: ")
+    date1 = input("📅 Altes Datum (YYYYMMDD): ")
+    date2 = input("📅 Neues Datum (YYYYMMDD): ")
+
+    compare_followers(user, date1, date2)
