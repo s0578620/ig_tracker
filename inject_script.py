@@ -1,21 +1,31 @@
+import json
 import time
+import os
+
+def save_to_file(data, filename):
+    """Speichert JSON-Daten in Datei."""
+    os.makedirs("data", exist_ok=True)
+    with open(os.path.join("data", filename), "w", encoding="utf-8") as f:
+        json.dump(data, f, indent=2, ensure_ascii=False)
+    print(f"✅ Gespeichert: data/{filename}")
 
 def inject_and_fetch(driver, username):
     print("🚀 Vollautomatisches JavaScript Injection gestartet...")
 
-    js_payload = f"""
+    js_template = """
     var textarea = document.createElement('textarea');
     textarea.id = 'injector';
     textarea.style.display = 'none';
     textarea.textContent = `
-    const username = "{username}";
-    let followers = [];
-    let followings = [];
-    let dontFollowMeBack = [];
-    let iDontFollowBack = [];
+    const username = "<<<USERNAME>>>";
 
-    (async () => {{
-      try {{
+    window.followers = [];
+    window.followings = [];
+    window.dontFollowMeBack = [];
+    window.iDontFollowBack = [];
+
+    (async () => {
+      try {
         console.log('Process started! Give it a couple of seconds');
 
         const userQueryRes = await fetch(
@@ -27,80 +37,98 @@ def inject_and_fetch(driver, username):
         let after = null;
         let has_next = true;
 
-        while (has_next) {{
+        while (has_next) {
           const res = await fetch(
             'https://www.instagram.com/graphql/query/?query_hash=c76146de99bb02f6415203be841dd25a&variables=' +
-            encodeURIComponent(JSON.stringify({{
+            encodeURIComponent(JSON.stringify({
               id: userId,
               include_reel: true,
               fetch_mutual: true,
               first: 50,
               after: after,
-            }}))
+            }))
           );
           const json = await res.json();
           has_next = json.data.user.edge_followed_by.page_info.has_next_page;
           after = json.data.user.edge_followed_by.page_info.end_cursor;
-          followers = followers.concat(
+          window.followers = window.followers.concat(
             json.data.user.edge_followed_by.edges.map(({ node }) => ({
               username: node.username,
               full_name: node.full_name
             }))
           );
-        }}
+        }
 
-        console.log({{ followers }});
+        console.log({ followers: window.followers });
 
         after = null;
         has_next = true;
 
-        while (has_next) {{
+        while (has_next) {
           const res = await fetch(
             'https://www.instagram.com/graphql/query/?query_hash=d04b0a864b4b54837c0d870b0e77e076&variables=' +
-            encodeURIComponent(JSON.stringify({{
+            encodeURIComponent(JSON.stringify({
               id: userId,
               include_reel: true,
               fetch_mutual: true,
               first: 50,
               after: after,
-            }}))
+            }))
           );
           const json = await res.json();
           has_next = json.data.user.edge_follow.page_info.has_next_page;
           after = json.data.user.edge_follow.page_info.end_cursor;
-          followings = followings.concat(
+          window.followings = window.followings.concat(
             json.data.user.edge_follow.edges.map(({ node }) => ({
               username: node.username,
               full_name: node.full_name
             }))
           );
-        }}
+        }
 
-        console.log({{ followings }});
+        console.log({ followings: window.followings });
 
-        dontFollowMeBack = followings.filter((following) => {{
-          return !followers.find((follower) => follower.username === following.username);
-        }});
+        window.dontFollowMeBack = window.followings.filter((following) => {
+          return !window.followers.find((follower) => follower.username === following.username);
+        });
 
-        console.log({{ dontFollowMeBack }});
+        console.log({ dontFollowMeBack: window.dontFollowMeBack });
 
-        iDontFollowBack = followers.filter((follower) => {{
-          return !followings.find((following) => following.username === follower.username);
-        }});
+        window.iDontFollowBack = window.followers.filter((follower) => {
+          return !window.followings.find((following) => following.username === follower.username);
+        });
 
-        console.log({{ iDontFollowBack }});
+        console.log({ iDontFollowBack: window.iDontFollowBack });
 
         console.log('Process done! Type copy(followers) etc.');
-      }} catch (err) {{
-        console.log({{ err }});
-      }}
-    }})();
+      } catch (err) {
+        console.log({ err });
+      }
+    })();
     `;
     document.body.appendChild(textarea);
     eval(document.getElementById('injector').textContent);
     """
 
-    driver.execute_script(js_payload)
+    js_code = js_template.replace("<<<USERNAME>>>", username)
+    driver.execute_script(js_code)
 
     print("⏳ JavaScript erfolgreich vollautomatisch gestartet!")
-    time.sleep(60)
+    time.sleep(60)  # Warten bis API fertig
+
+    # Jetzt Daten holen:
+    followers = driver.execute_script("return window.followers;")
+    followings = driver.execute_script("return window.followings;")
+    dontFollowMeBack = driver.execute_script("return window.dontFollowMeBack;")
+    iDontFollowBack = driver.execute_script("return window.iDontFollowBack;")
+
+    print(f"✅ Followers geladen: {len(followers)} Stück")
+    print(f"✅ Followings geladen: {len(followings)} Stück")
+    print(f"✅ Nicht zurückgefolgt: {len(dontFollowMeBack)} Stück")
+    print(f"✅ Ich folge nicht zurück: {len(iDontFollowBack)} Stück")
+
+    # Speichern
+    save_to_file(followers, "followers.json")
+    save_to_file(followings, "followings.json")
+    save_to_file(dontFollowMeBack, "dontFollowMeBack.json")
+    save_to_file(iDontFollowBack, "iDontFollowBack.json")

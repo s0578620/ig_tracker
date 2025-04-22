@@ -76,6 +76,7 @@ def main():
     try:
         login_instagram(driver)
         inject_and_fetch(driver, IG_USERNAME)
+        #inject_and_fetch(driver, "shanabazi")
     finally:
         print("🚀 Bot Ablauf abgeschlossen!")
         driver.quit()
