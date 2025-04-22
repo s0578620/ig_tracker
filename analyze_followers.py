@@ -1,13 +1,60 @@
 import json
 import os
 
+def find_last_two_dates(username):
+    """Finde die letzten zwei Datumsordner für den Benutzer."""
+    user_folder = os.path.join("data", username)
+    if not os.path.exists(user_folder):
+        return None, None
 
-def load_followers(path):
-    """Lädt eine Follower-Liste aus einer JSON-Datei."""
+    dates = [d for d in os.listdir(user_folder) if os.path.isdir(os.path.join(user_folder, d)) and d.isdigit()]
+    dates = sorted(dates)
+
+    if len(dates) < 2:
+        return None, None
+
+    return dates[-2], dates[-1]
+
+def load_followers(username, date_stamp):
+    """Lädt follower.json für ein gegebenes Datum."""
+    path = os.path.join("data", username, date_stamp, f"{date_stamp}_followers.json")
+    if not os.path.exists(path):
+        return []
+
     with open(path, "r", encoding="utf-8") as f:
-        data = json.load(f)
-    return set(user["username"] for user in data)
+        followers = json.load(f)
 
+    return [user['username'] for user in followers]
+def generate_report(username):
+    """Vergleicht zwei Snapshots und erstellt einen Report."""
+    date_old, date_new = find_last_two_dates(username)
+
+    if not date_old or not date_new:
+        print("⚠️ Nicht genug Daten für Report.")
+        return
+
+    followers_old = load_followers(username, date_old)
+    followers_new = load_followers(username, date_new)
+
+    unfollowers = list(set(followers_old) - set(followers_new))
+    new_followers = list(set(followers_new) - set(followers_old))
+
+    report = {
+        "date_from": date_old,
+        "date_to": date_new,
+        "unfollowers": unfollowers,
+        "new_followers": new_followers
+    }
+
+    # Speichern
+    report_folder = os.path.join("data", username, date_new)
+    os.makedirs(report_folder, exist_ok=True)
+    report_path = os.path.join(report_folder, f"{date_new}_report.json")
+
+    with open(report_path, "w", encoding="utf-8") as f:
+        json.dump(report, f, indent=2, ensure_ascii=False)
+
+    print(f"📋 Report gespeichert: {report_path}")
 
 def compare_followers(user, date1, date2):
     """Vergleicht zwei Follower-Datenstände."""

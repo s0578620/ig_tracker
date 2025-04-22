@@ -7,6 +7,8 @@ from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from webdriver_manager.chrome import ChromeDriverManager
+from growth_tracker import update_growth
+from analyze_followers import generate_report
 
 from config import IG_USERNAME, IG_PASSWORD
 from inject_script import inject_and_fetch
@@ -18,7 +20,9 @@ def setup_driver():
     """Setzt den ChromeDriver auf."""
     options = webdriver.ChromeOptions()
     options.add_argument("--start-maximized")
-    options.add_experimental_option("detach", True)  # Browser bleibt nach Script offen
+    options.add_argument("--headless")
+    options.add_argument("--disable-gpu")
+    options.add_experimental_option("detach", True)
     service = Service(ChromeDriverManager().install())
     driver = webdriver.Chrome(service=service, options=options)
     return driver
@@ -76,7 +80,13 @@ def main():
     try:
         login_instagram(driver)
         inject_and_fetch(driver, IG_USERNAME)
+        update_growth(IG_USERNAME)
+        generate_report(IG_USERNAME)
+
         #inject_and_fetch(driver, "shanabazi")
+        #update_growth("shanabazi")
+        #generate_report("shanabazi")
+
     finally:
         print("🚀 Bot Ablauf abgeschlossen!")
         driver.quit()

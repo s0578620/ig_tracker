@@ -1,3 +1,6 @@
+[![Master Build](https://github.com/s0578620/ig_tracker/actions/workflows/python-app.yml/badge.svg?branch=master)](https://github.com/s0578620/ig_tracker/actions/workflows/python-app.yml)
+
+[![Master Build](https://github.com/s0578620/ig_tracker/actions/workflows/python-app.yml/badge.svg?branch=master)
 # Instagram Follower Tracker
 
 A simple, fully automated bot to track followers, followings, unfollowers, and new followers on Instagram.
