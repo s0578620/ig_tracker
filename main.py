@@ -20,8 +20,8 @@ def setup_driver():
     """Setzt den ChromeDriver auf."""
     options = webdriver.ChromeOptions()
     options.add_argument("--start-maximized")
-    options.add_argument("--headless")
-    options.add_argument("--disable-gpu")
+    #options.add_argument("--headless")
+    #options.add_argument("--disable-gpu")
     options.add_experimental_option("detach", True)
     service = Service(ChromeDriverManager().install())
     driver = webdriver.Chrome(service=service, options=options)
@@ -82,10 +82,6 @@ def main():
         inject_and_fetch(driver, IG_USERNAME)
         update_growth(IG_USERNAME)
         generate_report(IG_USERNAME)
-
-        #inject_and_fetch(driver, "shanabazi")
-        #update_growth("shanabazi")
-        #generate_report("shanabazi")
 
     finally:
         print("🚀 Bot Ablauf abgeschlossen!")
